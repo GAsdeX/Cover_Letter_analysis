@@ -49,35 +49,44 @@ def differences(phrasesList, computingDeph):
 
                 if len(tempSample) != 0:
                     tempList.append(tempSample)
-                    
+
         differences(tempList, computingDeph)
         return (tempList)
 
 
 def restoreText (text):
-    listOfNgrams = list(list(text[i]) for i in range(len(text)))
-    print (collections.Counter(list(itertools.chain.from_iterable(listOfNgrams))))
-    # while True:
-    #     i = 0
-    # for gramsList in listOfNgrams:
-    #     print (list(gramsList))
-            # for gram in gramsList:
-            #     print (gram)
-            #     for i in
-            #     if
+    # print (text)
+    listOfNgrams = []
+    newPhrasesList = []
+    for i in text:
+        temp = (list(i))
+        for j in range(len(temp)):
+            temp[j] = temp[j].split()
+
+        listOfNgrams.append(temp)
+
+    for gramsList in listOfNgrams:
+        for gram in range(len(gramsList)):
+            for i in range(len(gramsList)):
+                if (gramsList[gram][:(numberOfGrams-1)]) ==  (gramsList[i][(len(gramsList[i])-(numberOfGrams-1)):]):
+                    temp = (list(itertools.chain.from_iterable([gramsList[i],gramsList[gram][(numberOfGrams-1):]])))
+                    gramsList[gram] = temp
+                    newPhrasesList.append(" ".join(temp))
+    print ((dict(collections.Counter(newPhrasesList))))
+    print (list(dict(collections.Counter(newPhrasesList))))
+
+    for i in ((dict(collections.Counter(newPhrasesList)))):
+        print (i)
+
+    return (dict(collections.Counter(newPhrasesList)))
 
 def intersect():
     slicedLetters = slicetext()
     listOfIntersections = []
     listOfDifferences = []
     listOfIntersections = differences(slicedLetters, len(slicedLetters))
-    # print (listOfIntersections)
-    restoreText(listOfIntersections)
-    return listOfIntersections
-
-
-    # intersectedLetters = intersect()
-    # if (intersectedLetters[:(numberOfGrams)])
+    listOfphrases = restoreText(listOfIntersections)
+    return listOfphrases
 
 
 def writeIntoFile():
@@ -93,4 +102,4 @@ def writeIntoFile():
     f.close()
 
 if __name__ == "__main__":
-    intersect()
+    writeIntoFile()

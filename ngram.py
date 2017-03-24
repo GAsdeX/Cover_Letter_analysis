@@ -32,61 +32,63 @@ def slicetext(n = numberOfGrams):
 
     return slicedLetters
 
-def differences(phrasesList, computingDeph):
-    if len(phrasesList) > 1:
-        tempSample = set()
-        tempList = []
-        for letter in range(len(phrasesList)):
-            if (letter == 0):
-                pass
-            if letter == 1:
-                tempSample = (phrasesList[0].intersection(phrasesList[letter]))
-            else:
-                for i in range(len(phrasesList)):
+def differences(phrasesList):
+    ngramcCounter = dict()
+    for letter in range(len(phrasesList)):
+        for i in range(len(phrasesList)):
+            tempListOfIntersections = list(phrasesList[letter].intersection(phrasesList[i]))
+            tempChecker = dict()
+            for  ngram in tempListOfIntersections:
+                try:
+                    ngramcCounter[ngram]['phraseMentions'].append(i)
 
-                    if i != letter:
-                        tempSample = ((phrasesList[i]).intersection(phrasesList[letter]))
+                except:
+                    ngramcCounter[ngram] = {'phraseCounter' : int(0), 'phraseMentions' : [i]}
 
-                if len(tempSample) != 0:
-                    tempList.append(tempSample)
+    for i in (ngramcCounter):
+        ngramcCounter[i]['phraseMentions'] = dict(collections.Counter(ngramcCounter[i]['phraseMentions']))
+        tempMax = max(ngramcCounter[i]['phraseMentions'], key=ngramcCounter[i]['phraseMentions'].get)
+        tempMin = min(ngramcCounter[i]['phraseMentions'], key=ngramcCounter[i]['phraseMentions'].get)
+        ngramcCounter[i]['phraseCounter'] = ngramcCounter[i]['phraseMentions'][tempMax]
+        ngramcCounter[i]['phraseMentions'] = list(collections.Counter(ngramcCounter[i]['phraseMentions']))
 
-        differences(tempList, computingDeph)
-        return (tempList)
+    return (ngramcCounter)
 
 
-def restoreText (text):
-    # print (text)
-    listOfNgrams = []
-    newPhrasesList = []
-    for i in text:
-        temp = (list(i))
-        for j in range(len(temp)):
-            temp[j] = temp[j].split()
-
-        listOfNgrams.append(temp)
-
-    for gramsList in listOfNgrams:
-        for gram in range(len(gramsList)):
-            for i in range(len(gramsList)):
-                if (gramsList[gram][:(numberOfGrams-1)]) ==  (gramsList[i][(len(gramsList[i])-(numberOfGrams-1)):]):
-                    temp = (list(itertools.chain.from_iterable([gramsList[i],gramsList[gram][(numberOfGrams-1):]])))
-                    gramsList[gram] = temp
-                    newPhrasesList.append(" ".join(temp))
-    print ((dict(collections.Counter(newPhrasesList))))
-    print (list(dict(collections.Counter(newPhrasesList))))
-
-    for i in ((dict(collections.Counter(newPhrasesList)))):
-        print (i)
-
-    return (dict(collections.Counter(newPhrasesList)))
+#
+# def restoreText (text):
+#     # print (text)
+#     listOfNgrams = []
+#     newPhrasesList = []
+#     for i in text:
+#         temp = (list(i))
+#         for j in range(len(temp)):
+#             temp[j] = temp[j].split()
+#
+#         listOfNgrams.append(temp)
+#
+#     for gramsList in listOfNgrams:
+#         for gram in range(len(gramsList)):
+#             for i in range(len(gramsList)):
+#                 if (gramsList[gram][:(numberOfGrams-1)]) ==  (gramsList[i][(len(gramsList[i])-(numberOfGrams-1)):]):
+#                     temp = (list(itertools.chain.from_iterable([gramsList[i],gramsList[gram][(numberOfGrams-1):]])))
+#                     gramsList[gram] = temp
+#                     newPhrasesList.append(" ".join(temp))
+#     print ((dict(collections.Counter(newPhrasesList))))
+#     print (list(dict(collections.Counter(newPhrasesList))))
+#
+#     for i in ((dict(collections.Counter(newPhrasesList)))):
+#         print (i)
+#
+#     return (dict(collections.Counter(newPhrasesList)))
 
 def intersect():
     slicedLetters = slicetext()
     listOfIntersections = []
     listOfDifferences = []
-    listOfIntersections = differences(slicedLetters, len(slicedLetters))
-    listOfphrases = restoreText(listOfIntersections)
-    return listOfphrases
+    listOfIntersections = differences(slicedLetters)
+    # listOfphrases = restoreText(listOfIntersections)
+    return listOfIntersections
 
 
 def writeIntoFile():
@@ -97,8 +99,12 @@ def writeIntoFile():
         listOfDublicates += [(phrase)]
 
     f= open('result.txt', 'w+')
-    for i in listOfDublicates:
-        f.write(str(i) + '\n')
+    while phrases:
+
+        tempMaxMention = max(phrases, key=lambda i: phrases[i]['phraseCounter'])
+        f.write('\"' + tempMaxMention + '\" - ' + str(phrases[tempMaxMention]['phraseCounter']) + str(phrases[tempMaxMention]['phraseMentions']) + '\n')
+        del phrases[tempMaxMention]
+
     f.close()
 
 if __name__ == "__main__":

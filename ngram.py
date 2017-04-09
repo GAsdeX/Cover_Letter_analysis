@@ -1,111 +1,162 @@
 from nltk import ngrams
 import math
 import json
-import collections
+from collections import Counter
 import itertools
+import numpy as np
+import matplotlib.pyplot as plt
+from io import StringIO
 
 coverletterList = []
 
 numberOfGrams = 3
 
 def ejectLetters():
-
     f = open('letters_rinat.json')
     _letterList = json.loads(f.readlines()[0])
 
-    wordlist = set()
+    wordlist = list()
 
     for i in range(len(_letterList)):
-        wordlist.add(_letterList[i]['coverLetter'])
+        wordlist.append(_letterList[i]['coverLetter'])
+    # print (wordlist)
 
     return wordlist
 
 def slicetext(n = numberOfGrams):
 
     slicedLetters = list()
+
     for letter in ejectLetters():
         letter = list(ngrams(letter.split(), n))
-        joinedLeter = set()
+        joinedLeter = list()
+
         for i in letter:
-            joinedLeter.add(" ".join(i))
+            joinedLeter.append(" ".join(i))
+
         slicedLetters.append(joinedLeter)
+        del joinedLeter
 
-    return slicedLetters
+    dictOfMentions = dict()
+    x = list()
+    y = list()
 
-def differences(phrasesList):
-    ngramcCounter = dict()
-    for letter in range(len(phrasesList)):
-        for i in range(len(phrasesList)):
-            tempListOfIntersections = list(phrasesList[letter].intersection(phrasesList[i]))
-            tempChecker = dict()
-            for  ngram in tempListOfIntersections:
-                try:
-                    ngramcCounter[ngram]['phraseMentions'].append(i)
+    begining = dict()
+    ending = dict()
 
-                except:
-                    ngramcCounter[ngram] = {'phraseCounter' : int(0), 'phraseMentions' : [i]}
+    for letter in slicedLetters:
+        letterSize = len(letter)
 
-    for i in (ngramcCounter):
-        ngramcCounter[i]['phraseMentions'] = dict(collections.Counter(ngramcCounter[i]['phraseMentions']))
-        tempMax = max(ngramcCounter[i]['phraseMentions'], key=ngramcCounter[i]['phraseMentions'].get)
-        tempMin = min(ngramcCounter[i]['phraseMentions'], key=ngramcCounter[i]['phraseMentions'].get)
-        ngramcCounter[i]['phraseCounter'] = ngramcCounter[i]['phraseMentions'][tempMax]
-        ngramcCounter[i]['phraseMentions'] = list(collections.Counter(ngramcCounter[i]['phraseMentions']))
+        for ngram in (range(len(letter))):
 
-    return (ngramcCounter)
+            if dictOfMentions.get(letter[ngram]):
+                dictOfMentions[letter[ngram]]['mentions'].append([ slicedLetters.index(letter), float(letter.index(letter[ngram])/letterSize)])
+
+                begining[" ".join(letter[ngram].split()[1:])] = {'mentions' : [ slicedLetters.index(letter), letter.index(letter[ngram])/letterSize]}
+                ending[" ".join(letter[ngram].split()[:2])] = letter[ngram]
+
+            if not dictOfMentions.get(letter[ngram]):
+                dictOfMentions[letter[ngram]] = {'mentions' : [ slicedLetters.index(letter), letter.index(letter[ngram])/letterSize]}
+                begining[" ".join(letter[ngram].split()[1:])] = {'mentions' : [ slicedLetters.index(letter), letter.index(letter[ngram])/letterSize]}
+                ending[" ".join(letter[ngram].split()[:2])] = letter[ngram]
+
+    cehckEnd = True
+    temp = ending
+    prev = ending
+    topPhrasesList = dict()
+
+    # print (dictOfMentions)
+    # print(json.dumps(dictOfMentions))
+    # temp = json.dumps(dictOfMentions)
+    # io = StringIO()
+    # json.dump(['streaming API'], io)
+    # io.getvalue()
+
+    # print (json.dumps(dictOfMentions, separators=(',', ':')))
+    # f = open("ngrams.json", "w+")
+    # f.write(json.dumps(json.dumps(dictOfMentions, separators=(',', ':'))))
+    # f.close()
+
+    #
+    dictOfPhrases = dict()
+    for i in dictOfMentions:
+        countTrigrams = len(dictOfMentions[i]['mentions'])
+        if dictOfPhrases.get(countTrigrams):
+            dictOfPhrases[countTrigrams].append([i , dictOfMentions[i]])
+        if not dictOfPhrases.get(countTrigrams):
+            dictOfPhrases[countTrigrams] = [i , dictOfMentions[i]]
+    print (dictOfPhrases)
 
 
-#
-# def restoreText (text):
-#     # print (text)
-#     listOfNgrams = []
-#     newPhrasesList = []
-#     for i in text:
-#         temp = (list(i))
-#         for j in range(len(temp)):
-#             temp[j] = temp[j].split()
-#
-#         listOfNgrams.append(temp)
-#
-#     for gramsList in listOfNgrams:
-#         for gram in range(len(gramsList)):
-#             for i in range(len(gramsList)):
-#                 if (gramsList[gram][:(numberOfGrams-1)]) ==  (gramsList[i][(len(gramsList[i])-(numberOfGrams-1)):]):
-#                     temp = (list(itertools.chain.from_iterable([gramsList[i],gramsList[gram][(numberOfGrams-1):]])))
-#                     gramsList[gram] = temp
-#                     newPhrasesList.append(" ".join(temp))
-#     print ((dict(collections.Counter(newPhrasesList))))
-#     print (list(dict(collections.Counter(newPhrasesList))))
-#
-#     for i in ((dict(collections.Counter(newPhrasesList)))):
-#         print (i)
-#
-#     return (dict(collections.Counter(newPhrasesList)))
+    words = list()
+    dictOfPhrases = dict()
 
-def intersect():
-    slicedLetters = slicetext()
-    listOfIntersections = []
-    listOfDifferences = []
-    listOfIntersections = differences(slicedLetters)
-    # listOfphrases = restoreText(listOfIntersections)
-    return listOfIntersections
+    while dictOfMentions:
+        tempMaxtrigramMention = max(dictOfMentions,key=lambda i: len(dictOfMentions[i]['mentions']))
+        words = tempMaxtrigramMention.split()
+
+        # print (len(words))
+
+        for i in range((len(words)-3)+1,(len(words)-3)+2):
+
+            word1 = words[i]
+            word2 = words[i+1]
+            maxVal = 0
+            temp = ''
+            # print (word1, "--", word2)
+            tempList = []
+            for j in dictOfMentions:
+                # j is string
+                trigram = j.split()
+                # print (trigram)
+
+                if trigram[0] == word1 and trigram[1] == word2:
+                    print (len(dictOfMentions[j]['mentions']))
+
+                    # print (j,' == ',len(dictOfMentions[j]['mentions']))
+
+                    listOfngrams = []
+                    if len(dictOfMentions[j]['mentions']) > maxVal:
+                        # print (dictOfMentions[j]['mentions'][1])
+                        maxVal = len(dictOfMentions[j]['mentions'])
+                        temp = trigram[2]
+                        tempList.append(len(dictOfMentions[j]['mentions']))
+                        # print ('    trigram = ',' '.join(trigram))
+                        # print ('    temp = ', temp)
+                        # print ()
+                        listOfngrams.append(' '.join(trigram))
+                        # print (Counter(listOfngrams))
+            print (tempList)
+                    # if Counter:
+                    #     print (listOfngrams)
+
+            # print ('champion = ', temp)
+            words.append(temp)
+            # print(words)
+            # print (' '.join(temp))
+            dictOfMentions[' '.join(words)] = dictOfMentions.pop(tempMaxtrigramMention)
+            # del dictOfMentions[" ".join(temp)]
+
+    temp = dictOfMentions
+    dictOfMentions = dict()
+    dictOfNgrams = dict()
+    prevVal= 0
+
+    return dictOfMentions
+
 
 
 def writeIntoFile():
-
     phrases = intersect()
-    listOfDublicates = []
-    for phrase in phrases:
-        listOfDublicates += [(phrase)]
-
     f= open('result.txt', 'w+')
+
     while phrases:
 
         tempMaxMention = max(phrases, key=lambda i: phrases[i]['phraseCounter'])
         f.write('\"' + tempMaxMention + '\" - ' + str(phrases[tempMaxMention]['phraseCounter']) + str(phrases[tempMaxMention]['phraseMentions']) + '\n')
-        del phrases[tempMaxMention]
+
 
     f.close()
 
 if __name__ == "__main__":
-    writeIntoFile()
+    slicetext()
